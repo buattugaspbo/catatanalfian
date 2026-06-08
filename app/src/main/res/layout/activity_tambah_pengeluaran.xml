@@ -26,7 +26,7 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/abc_ic_ab_back_material"
+                android:src="@drawable/ic_arrow_back"
                 app:tint="@color/text_primary"/>
 
             <TextView
