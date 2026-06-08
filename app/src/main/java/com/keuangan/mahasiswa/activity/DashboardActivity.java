@@ -125,6 +125,9 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void setupNavigation() {
+        // Navigasi ke Pengaturan Profil & Reset Data
+        findViewById(R.id.cardProfile).setOnClickListener(v -> showProfileDialog());
+
         // Navigasi ke Halaman Uang Bulanan
         findViewById(R.id.menuUangBulanan).setOnClickListener(v -> 
             startActivity(new Intent(DashboardActivity.this, InputUangBulananActivity.class))
@@ -154,5 +157,60 @@ public class DashboardActivity extends AppCompatActivity {
         findViewById(R.id.menuLaporan).setOnClickListener(v -> 
             startActivity(new Intent(DashboardActivity.this, LaporanActivity.class))
         );
+    }
+
+    private void showProfileDialog() {
+        android.view.LayoutInflater inflater = android.view.LayoutInflater.from(this);
+        android.view.View dialogView = inflater.inflate(R.layout.dialog_profile, null);
+
+        android.widget.EditText etNama = dialogView.findViewById(R.id.etProfileNama);
+        android.widget.EditText etNim = dialogView.findViewById(R.id.etProfileNim);
+        android.widget.EditText etEmail = dialogView.findViewById(R.id.etProfileEmail);
+        com.google.android.material.button.MaterialButton btnReset = dialogView.findViewById(R.id.btnResetData);
+
+        // Load current data
+        Mahasiswa m = dbHelper.getMahasiswa();
+        etNama.setText(m.getNama());
+        etNim.setText(m.getNim());
+        etEmail.setText(m.getEmail());
+
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setPositiveButton("Simpan", (dialogInterface, i) -> {
+                    String namaBaru = etNama.getText().toString().trim();
+                    String nimBaru = etNim.getText().toString().trim();
+                    String emailBaru = etEmail.getText().toString().trim();
+
+                    if (namaBaru.isEmpty() || nimBaru.isEmpty() || emailBaru.isEmpty()) {
+                        android.widget.Toast.makeText(this, "Semua field profil harus diisi!", android.widget.Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    m.setNama(namaBaru);
+                    m.setNim(nimBaru);
+                    m.setEmail(emailBaru);
+
+                    dbHelper.updateMahasiswa(m);
+                    android.widget.Toast.makeText(this, "Profil berhasil diperbarui!", android.widget.Toast.LENGTH_SHORT).show();
+                    loadDashboardData();
+                })
+                .setNegativeButton("Batal", null)
+                .create();
+
+        btnReset.setOnClickListener(view -> {
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Reset Semua Data")
+                    .setMessage("Apakah Anda yakin ingin menghapus semua rencana anggaran, tabungan, dan riwayat transaksi? Tindakan ini tidak bisa dibatalkan.")
+                    .setPositiveButton("Ya, Hapus Semua", (dialogInterface, i) -> {
+                        dbHelper.resetDatabase();
+                        dialog.dismiss();
+                        android.widget.Toast.makeText(this, "Semua data berhasil direset!", android.widget.Toast.LENGTH_SHORT).show();
+                        loadDashboardData();
+                    })
+                    .setNegativeButton("Batal", null)
+                    .show();
+        });
+
+        dialog.show();
     }
 }

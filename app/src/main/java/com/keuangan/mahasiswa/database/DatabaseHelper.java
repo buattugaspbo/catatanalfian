@@ -121,9 +121,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void updateMahasiswa(Mahasiswa m) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
+        values.put("nama", m.getNama());
+        values.put("nim", m.getNim());
+        values.put("email", m.getEmail());
         values.put("uang_bulanan", m.getUangBulanan());
         values.put("saldo", m.getSaldo());
         db.update(TABLE_MAHASISWA, values, "id = ?", new String[]{String.valueOf(m.getId())});
+    }
+
+    public void resetDatabase() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("DELETE FROM " + TABLE_TRANSAKSI);
+        db.execSQL("DELETE FROM " + TABLE_RENCANA);
+        
+        // Reset tabungan ke 0
+        ContentValues tabValues = new ContentValues();
+        tabValues.put("saldo_tabungan", 0.0);
+        db.update(TABLE_TABUNGAN, tabValues, "id = 1", null);
+
+        // Reset uang_bulanan dan saldo mahasiswa ke 0
+        ContentValues mValues = new ContentValues();
+        mValues.put("uang_bulanan", 0.0);
+        mValues.put("saldo", 0.0);
+        db.update(TABLE_MAHASISWA, mValues, "id = 1", null);
     }
 
     // =========================================================================
