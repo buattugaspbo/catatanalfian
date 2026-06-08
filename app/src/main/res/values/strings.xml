@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">CatatUang Mahasiswa</string>
+    <string name="welcome">Selamat Datang,</string>
+    <string name="total_balance">Sisa Saldo</string>
+    <string name="total_income">Total Pemasukan</string>
+    <string name="total_expense">Total Pengeluaran</string>
+    <string name="history">Riwayat Transaksi</string>
+    <string name="add_transaction">Tambah Transaksi</string>
+    <string name="amount_hint">Jumlah Uang (Rp)</string>
+    <string name="description_hint">Keterangan (misal: Uang bulanan, beli buku)</string>
+    <string name="category_hint">Kategori (misal: Bulanan, Makanan, Transport)</string>
+    <string name="save">Simpan</string>
+    <string name="cancel">Batal</string>
+    <string name="delete_confirm">Apakah Anda yakin ingin menghapus transaksi ini?</string>
+</resources>

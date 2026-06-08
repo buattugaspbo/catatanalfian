@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@android:mipmap/sym_def_app_icon"
+        android:label="@string/app_name"
+        android:roundIcon="@android:mipmap/sym_def_app_icon"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.PencatatanKeuangan">
+
+        <!-- Splash / Landing Activity -->
+        <activity
+            android:name=".activity.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Dashboard Activity -->
+        <activity
+            android:name=".activity.DashboardActivity"
+            android:exported="false" />
+
+        <!-- Input Uang Bulanan Activity -->
+        <activity
+            android:name=".activity.InputUangBulananActivity"
+            android:exported="false" />
+
+        <!-- Rencana Pengeluaran Activity -->
+        <activity
+            android:name=".activity.RencanaPengeluaranActivity"
+            android:exported="false" />
+
+        <!-- Tambah Pengeluaran Activity -->
+        <activity
+            android:name=".activity.TambahPengeluaranActivity"
+            android:exported="false" />
+
+        <!-- Tabungan Activity -->
+        <activity
+            android:name=".activity.TabunganActivity"
+            android:exported="false" />
+
+        <!-- Riwayat Transaksi Activity -->
+        <activity
+            android:name=".activity.RiwayatActivity"
+            android:exported="false" />
+
+        <!-- Laporan Keuangan Activity -->
+        <activity
+            android:name=".activity.LaporanActivity"
+            android:exported="false" />
+
+    </application>
+
+</manifest>
