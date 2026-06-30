@@ -9,15 +9,30 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PencatatanKeuangan">
 
-        <!-- Splash / Landing Activity -->
+        <!-- Login Activity (Launcher Baru) -->
         <activity
-            android:name=".activity.MainActivity"
+            android:name=".activity.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Splash Screen / Redirector -->
+        <activity
+            android:name=".activity.MainActivity"
+            android:exported="false" />
+
+        <!-- Register Activity -->
+        <activity
+            android:name=".activity.RegisterActivity"
+            android:exported="false" />
+
+        <!-- Admin Dashboard Activity -->
+        <activity
+            android:name=".activity.AdminDashboardActivity"
+            android:exported="false" />
 
         <!-- Dashboard Activity -->
         <activity

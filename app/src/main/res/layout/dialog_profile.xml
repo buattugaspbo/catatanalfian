@@ -92,6 +92,14 @@
         android:textColor="@color/expense"
         app:strokeColor="@color/expense"
         app:cornerRadius="8dp"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="12dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnLogoutUser"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Logout Akun"
+        app:cornerRadius="8dp"
+        android:backgroundTint="@color/text_secondary"/>
 
 </LinearLayout>

@@ -9,6 +9,7 @@
     <!-- UI Colors -->
     <color name="background">#F4F6F9</color>
     <color name="card_background">#FFFFFF</color>
+    <color name="surface">#FFFFFF</color>
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#666666</color>
     <color name="divider">#BDBDBD</color>

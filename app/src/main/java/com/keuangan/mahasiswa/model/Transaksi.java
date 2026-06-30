@@ -1,13 +1,7 @@
 package com.keuangan.mahasiswa.model;
 
-/**
- * Konsep PBO: Abstraction (Abstraksi)
- * Kelas Transaksi dideklarasikan sebagai abstract class.
- * Kelas ini memiliki abstract method prosesTransaksi() yang akan di-override
- * oleh subclass Pemasukan dan Pengeluaran sesuai logika bisnis masing-masing.
- */
+// Kelas abstrak Transaksi sebagai induk dari transaksi pemasukan dan pengeluaran
 public abstract class Transaksi {
-    // Konsep PBO: Encapsulation
     private int id;
     private String tanggal;
     private double nominal;
@@ -16,7 +10,7 @@ public abstract class Transaksi {
     public Transaksi(int id, String tanggal, double nominal, String keterangan) {
         this.id = id;
         this.tanggal = tanggal;
-        setNominal(nominal); // Validasi input melalui setter enkapsulasi
+        setNominal(nominal); // Validasi input menggunakan setter
         this.keterangan = keterangan;
     }
 
@@ -41,7 +35,7 @@ public abstract class Transaksi {
     }
 
     public void setNominal(double nominal) {
-        // Validasi nominal tidak boleh negatif atau nol
+        // Validasi agar nominal tidak bernilai negatif atau nol
         if (nominal <= 0) {
             throw new IllegalArgumentException("Nominal harus berupa angka lebih dari 0!");
         }
@@ -56,15 +50,13 @@ public abstract class Transaksi {
         this.keterangan = keterangan;
     }
 
-    // Konsep PBO: Abstraction - Method Abstrak
-    // Logika pemrosesan transaksi yang di-override secara spesifik di subclass
+    // Metode abstrak untuk memproses transaksi yang akan diimplementasikan oleh subclass
     public abstract void prosesTransaksi(Mahasiswa m, Tabungan t);
     
-    // Method Pendukung Polimorfisme Tampilan
     public abstract String getType();
     public abstract String getDetailInfo();
 
-    // Menampilkan detail teks transaksi
+    // Metode untuk menampilkan detail data transaksi
     public String tampilkanDetail() {
         return "[" + tanggal + "] " + getType() + ": " + keterangan + " - Nominal: " + nominal;
     }

@@ -1,12 +1,7 @@
 package com.keuangan.mahasiswa.model;
 
-/**
- * Konsep PBO: Encapsulation
- * Kelas Tabungan bertindak sebagai manajer saldo tabungan mahasiswa.
- * Menyediakan method validasi untuk menambah dan mengambil uang dari tabungan.
- */
+// Kelas Tabungan untuk menyimpan dan mengelola data saldo tabungan mahasiswa
 public class Tabungan {
-    // Konsep PBO: Encapsulation
     private double saldoTabungan;
 
     public Tabungan(double saldoTabungan) {
@@ -24,7 +19,7 @@ public class Tabungan {
         this.saldoTabungan = saldoTabungan;
     }
 
-    // Metode tambah tabungan
+    // Metode untuk menambah saldo tabungan
     public void tambahTabungan(double nominal) {
         if (nominal <= 0) {
             throw new IllegalArgumentException("Nominal setoran tabungan harus lebih besar dari nol!");
@@ -32,7 +27,7 @@ public class Tabungan {
         this.saldoTabungan += nominal;
     }
 
-    // Metode ambil tabungan dengan validasi batas saldo tabungan
+    // Metode untuk menarik uang dari tabungan dengan validasi batas saldo tabungan
     public void ambilTabungan(double nominal) {
         if (nominal <= 0) {
             throw new IllegalArgumentException("Nominal penarikan tabungan harus lebih besar dari nol!");
@@ -43,7 +38,7 @@ public class Tabungan {
         this.saldoTabungan -= nominal;
     }
 
-    // Metode cek saldo tabungan
+    // Metode untuk mengecek jumlah saldo tabungan saat ini
     public double cekSaldoTabungan() {
         return this.saldoTabungan;
     }

@@ -1,5 +1,6 @@
 package com.keuangan.mahasiswa.activity;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -22,16 +23,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-/**
- * Logika halaman TabunganActivity.
- * Mengelola setoran dan penarikan tabungan secara lokal,
- * memanfaatkan prosesTransaksi polimorfik untuk mengubah keadaan saldo dompet & tabungan.
- */
+// Activity untuk mengelola proses penyetoran dan penarikan uang tabungan
 public class TabunganActivity extends AppCompatActivity {
 
     private DatabaseHelper dbHelper;
     private Mahasiswa mahasiswa;
     private Tabungan tabungan;
+    private int userId;
 
     private TextView tvSaldoTabungan, tvSaldoDompet;
     private EditText etNominalTambah, etNominalAmbil, etAlasanAmbil;
@@ -45,6 +43,10 @@ public class TabunganActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tabungan);
+
+        // Ambil userId dari SharedPreferences
+        SharedPreferences prefs = getSharedPreferences("keuangan_prefs", MODE_PRIVATE);
+        userId = prefs.getInt("user_id", -1);
 
         dbHelper = new DatabaseHelper(this);
 
@@ -76,11 +78,13 @@ public class TabunganActivity extends AppCompatActivity {
     }
 
     private void refreshData() {
-        mahasiswa = dbHelper.getMahasiswa();
-        tabungan = dbHelper.getTabungan();
+        mahasiswa = dbHelper.getMahasiswa(userId);
+        tabungan = dbHelper.getTabungan(userId);
 
-        tvSaldoTabungan.setText(FormatRupiah.format(tabungan.getSaldoTabungan()));
-        tvSaldoDompet.setText("Saldo Dompet Utama: " + FormatRupiah.format(mahasiswa.getSaldo()));
+        if (mahasiswa != null && tabungan != null) {
+            tvSaldoTabungan.setText(FormatRupiah.format(tabungan.getSaldoTabungan()));
+            tvSaldoDompet.setText("Saldo Dompet Utama: " + FormatRupiah.format(mahasiswa.getSaldo()));
+        }
     }
 
     private void tambahTabungan() {
@@ -109,21 +113,21 @@ public class TabunganActivity extends AppCompatActivity {
 
         String tanggal = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(new Date());
 
-        // OOP: Tambah tabungan dicatat sebagai Pengeluaran kategori "Tabungan"
+        // Penyetoran tabungan dicatat sebagai transaksi Pengeluaran dengan kategori Tabungan
         Pengeluaran pengeluaran = new Pengeluaran(0, tanggal, nominal, "Setoran Tabungan", "Tabungan", "Menabung untuk masa depan", "Penting");
 
         try {
-            // Memodifikasi keadaan saldo dan tabungan secara polimorfis
+            // Memproses transaksi penyetoran tabungan
             pengeluaran.prosesTransaksi(mahasiswa, tabungan);
         } catch (Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Simpan ke SQLite
+        // Menyimpan pembaruan data ke database SQLite berdasarkan userId
         dbHelper.updateMahasiswa(mahasiswa);
-        dbHelper.updateTabungan(tabungan);
-        dbHelper.insertTransaksi(pengeluaran);
+        dbHelper.updateTabungan(tabungan, userId);
+        dbHelper.insertTransaksi(pengeluaran, userId);
 
         etNominalTambah.setText("");
         Toast.makeText(this, "Berhasil menyetor ke tabungan!", Toast.LENGTH_SHORT).show();
@@ -133,7 +137,6 @@ public class TabunganActivity extends AppCompatActivity {
     private void ambilTabungan() {
         String nominalStr = etNominalAmbil.getText().toString().trim();
         String alasan = etAlasanAmbil.getText().toString().trim();
-        String tingkatDarurat = spTingkatDarurat.getSelectedItem().toString();
 
         if (ValidasiInput.isEmpty(nominalStr) || ValidasiInput.isEmpty(alasan)) {
             Toast.makeText(this, "Nominal dan Alasan penarikan wajib diisi!", Toast.LENGTH_SHORT).show();
@@ -158,21 +161,21 @@ public class TabunganActivity extends AppCompatActivity {
 
         String tanggal = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(new Date());
 
-        // OOP: Ambil tabungan dicatat sebagai Pemasukan sumber "Ambil Tabungan"
+        // Penarikan tabungan dicatat sebagai transaksi Pemasukan dengan sumber Ambil Tabungan
         Pemasukan pemasukan = new Pemasukan(0, tanggal, nominal, "Tarik Tabungan: " + alasan, "Ambil Tabungan");
 
         try {
-            // Memodifikasi keadaan saldo dan tabungan secara polimorfis
+            // Memproses transaksi penarikan tabungan
             pemasukan.prosesTransaksi(mahasiswa, tabungan);
         } catch (Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Simpan ke SQLite
+        // Menyimpan pembaruan data ke database SQLite berdasarkan userId
         dbHelper.updateMahasiswa(mahasiswa);
-        dbHelper.updateTabungan(tabungan);
-        dbHelper.insertTransaksi(pemasukan);
+        dbHelper.updateTabungan(tabungan, userId);
+        dbHelper.insertTransaksi(pemasukan, userId);
 
         etNominalAmbil.setText("");
         etAlasanAmbil.setText("");

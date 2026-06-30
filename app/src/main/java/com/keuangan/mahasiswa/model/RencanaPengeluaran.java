@@ -1,12 +1,7 @@
 package com.keuangan.mahasiswa.model;
 
-/**
- * Konsep PBO: Encapsulation
- * Kelas RencanaPengeluaran memetakan rencana anggaran bulanan per kategori.
- * Menyediakan method evaluasi sisa budget dan status over-budget.
- */
+// Kelas RencanaPengeluaran untuk memetakan alokasi rencana anggaran bulanan per kategori belanja
 public class RencanaPengeluaran {
-    // Konsep PBO: Encapsulation
     private String kategori;
     private double nominalRencana;
 
@@ -34,12 +29,12 @@ public class RencanaPengeluaran {
         this.nominalRencana = nominalRencana;
     }
 
-    // Metode menghitung sisa rencana anggaran
+    // Metode untuk menghitung sisa dari rencana anggaran yang dialokasikan
     public double hitungSisaRencana(double totalTerpakai) {
         return this.nominalRencana - totalTerpakai;
     }
 
-    // Metode mengecek apakah pengeluaran melebihi anggaran rencana
+    // Metode untuk memeriksa apakah total pengeluaran melebihi batas rencana anggaran
     public boolean cekMelebihiBudget(double totalTerpakai) {
         return totalTerpakai > this.nominalRencana;
     }

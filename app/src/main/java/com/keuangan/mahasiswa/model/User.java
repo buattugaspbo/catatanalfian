@@ -1,20 +1,29 @@
 package com.keuangan.mahasiswa.model;
 
-/**
- * Konsep PBO: Inheritance - Superclass
- * Kelas User mendefinisikan informasi dasar pengguna sistem.
- * Kelas ini bertindak sebagai kelas induk untuk kelas Mahasiswa.
- */
+// Kelas User sebagai kelas induk (superclass) untuk menyimpan informasi dasar pengguna sistem
 public class User {
-    // Konsep PBO: Encapsulation (Atribut dideklarasikan private)
     private int id;
     private String nama;
     private String email;
+    private String password;
+    private String role;
 
+    // Konstruktor dasar tanpa password dan role (untuk backward compatibility)
     public User(int id, String nama, String email) {
         this.id = id;
         this.nama = nama;
         this.email = email;
+        this.password = "";
+        this.role = "MAHASISWA";
+    }
+
+    // Konstruktor lengkap dengan password dan role
+    public User(int id, String nama, String email, String password, String role) {
+        this.id = id;
+        this.nama = nama;
+        this.email = email;
+        this.password = password;
+        this.role = role;
     }
 
     public int getId() {
@@ -41,7 +50,23 @@ public class User {
         this.email = email;
     }
 
-    // Metode menampilkan info dasar
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    // Metode untuk menampilkan informasi dasar pengguna
     public String tampilkanInfo() {
         return "Pengguna: " + nama + " (" + email + ")";
     }

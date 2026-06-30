@@ -1,11 +1,13 @@
 package com.keuangan.mahasiswa.activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -21,16 +23,13 @@ import com.keuangan.mahasiswa.utils.FormatRupiah;
 
 import java.util.List;
 
-/**
- * Halaman utama Dashboard aplikasi.
- * Menampilkan ringkasan profil, saldo berjalan, uang bulanan, total pengeluaran,
- * tabungan, status keuangan mahasiswa, dan menu navigasi.
- */
+// Activity untuk halaman dashboard utama aplikasi
 public class DashboardActivity extends AppCompatActivity {
 
     private DatabaseHelper dbHelper;
     private Mahasiswa mahasiswa;
     private Tabungan tabungan;
+    private int userId;
 
     private TextView tvAvatar, tvStudentName, tvStudentNim, tvFinanceStatus;
     private TextView tvSaldo, tvUangBulanan, tvTotalPengeluaran, tvTotalTabungan;
@@ -40,6 +39,19 @@ public class DashboardActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
+        // Ambil userId dari SharedPreferences
+        SharedPreferences prefs = getSharedPreferences("keuangan_prefs", MODE_PRIVATE);
+        userId = prefs.getInt("user_id", -1);
+
+        if (userId == -1) {
+            // Jika tidak ada session, kembali ke Login
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         dbHelper = new DatabaseHelper(this);
         initViews();
         setupNavigation();
@@ -48,7 +60,7 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Selalu segarkan data ketika kembali ke dashboard
+        // Memperbarui data dashboard setiap kali activity dilanjutkan (onResume)
         loadDashboardData();
     }
 
@@ -65,12 +77,18 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void loadDashboardData() {
-        // 1. Ambil data dari SQLite lokal
-        mahasiswa = dbHelper.getMahasiswa();
-        tabungan = dbHelper.getTabungan();
-        List<Transaksi> transaksiList = dbHelper.getAllTransaksi();
+        // Mengambil data mahasiswa, tabungan, dan daftar transaksi dari database berdasarkan userId
+        mahasiswa = dbHelper.getMahasiswa(userId);
+        if (mahasiswa == null) {
+            Toast.makeText(this, "Gagal memuat data pengguna!", Toast.LENGTH_SHORT).show();
+            logout();
+            return;
+        }
 
-        // 2. Tampilkan Profil & Inisial Avatar
+        tabungan = dbHelper.getTabungan(userId);
+        List<Transaksi> transaksiList = dbHelper.getAllTransaksi(userId);
+
+        // Menampilkan profil mahasiswa dan menentukan inisial avatar
         String nama = mahasiswa.getNama();
         tvStudentName.setText(nama);
         tvStudentNim.setText("NIM: " + mahasiswa.getNim());
@@ -86,17 +104,17 @@ public class DashboardActivity extends AppCompatActivity {
             tvAvatar.setText(initial.toString());
         }
 
-        // 3. Hitung total pengeluaran secara polimorfik menggunakan model LaporanKeuangan
+        // Menghitung akumulasi total pengeluaran
         LaporanKeuangan laporan = new LaporanKeuangan();
         double totalPengeluaran = laporan.hitungTotalPengeluaran(transaksiList);
 
-        // 4. Update data saldo dan uang bulanan di UI
+        // Menampilkan informasi keuangan mahasiswa ke UI dengan format pemisah ribuan
         tvSaldo.setText(FormatRupiah.format(mahasiswa.getSaldo()));
         tvUangBulanan.setText(FormatRupiah.format(mahasiswa.getUangBulanan()));
         tvTotalPengeluaran.setText(FormatRupiah.format(totalPengeluaran));
         tvTotalTabungan.setText(FormatRupiah.format(tabungan.getSaldoTabungan()));
 
-        // 5. Tentukan Status Keuangan
+        // Menentukan status keuangan berdasarkan rasio total pengeluaran terhadap uang bulanan
         double uangBulanan = mahasiswa.getUangBulanan();
         if (uangBulanan == 0) {
             updateFinanceStatus("Aman", R.color.income);
@@ -117,7 +135,8 @@ public class DashboardActivity extends AppCompatActivity {
         int color = ContextCompat.getColor(this, colorResId);
         tvFinanceStatus.setBackgroundColor(color);
         tvFinanceStatus.setTextColor(Color.WHITE);
-        // Buat background rounded corner sederhana programmatically
+        
+        // Membuat bentuk background rounded corner secara programmatis
         GradientDrawable gd = new GradientDrawable();
         gd.setColor(color);
         gd.setCornerRadius(16);
@@ -125,35 +144,29 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void setupNavigation() {
-        // Navigasi ke Pengaturan Profil & Reset Data
+        // Mengatur penanganan klik untuk navigasi ke berbagai menu activity
         findViewById(R.id.cardProfile).setOnClickListener(v -> showProfileDialog());
 
-        // Navigasi ke Halaman Uang Bulanan
         findViewById(R.id.menuUangBulanan).setOnClickListener(v -> 
             startActivity(new Intent(DashboardActivity.this, InputUangBulananActivity.class))
         );
 
-        // Navigasi ke Halaman Rencana Pengeluaran
         findViewById(R.id.menuRencana).setOnClickListener(v -> 
             startActivity(new Intent(DashboardActivity.this, RencanaPengeluaranActivity.class))
         );
 
-        // Navigasi ke Halaman Tambah Pengeluaran
         findViewById(R.id.menuCatatPengeluaran).setOnClickListener(v -> 
             startActivity(new Intent(DashboardActivity.this, TambahPengeluaranActivity.class))
         );
 
-        // Navigasi ke Halaman Tabungan
         findViewById(R.id.menuTabungan).setOnClickListener(v -> 
             startActivity(new Intent(DashboardActivity.this, TabunganActivity.class))
         );
 
-        // Navigasi ke Halaman Riwayat Transaksi
         findViewById(R.id.menuRiwayat).setOnClickListener(v -> 
             startActivity(new Intent(DashboardActivity.this, RiwayatActivity.class))
         );
 
-        // Navigasi ke Halaman Laporan Keuangan
         findViewById(R.id.menuLaporan).setOnClickListener(v -> 
             startActivity(new Intent(DashboardActivity.this, LaporanActivity.class))
         );
@@ -167,9 +180,10 @@ public class DashboardActivity extends AppCompatActivity {
         android.widget.EditText etNim = dialogView.findViewById(R.id.etProfileNim);
         android.widget.EditText etEmail = dialogView.findViewById(R.id.etProfileEmail);
         com.google.android.material.button.MaterialButton btnReset = dialogView.findViewById(R.id.btnResetData);
+        com.google.android.material.button.MaterialButton btnLogout = dialogView.findViewById(R.id.btnLogoutUser);
 
-        // Load current data
-        Mahasiswa m = dbHelper.getMahasiswa();
+        // Memuat data mahasiswa saat ini ke form edit profil
+        Mahasiswa m = dbHelper.getMahasiswa(userId);
         etNama.setText(m.getNama());
         etNim.setText(m.getNim());
         etEmail.setText(m.getEmail());
@@ -182,7 +196,7 @@ public class DashboardActivity extends AppCompatActivity {
                     String emailBaru = etEmail.getText().toString().trim();
 
                     if (namaBaru.isEmpty() || nimBaru.isEmpty() || emailBaru.isEmpty()) {
-                        android.widget.Toast.makeText(this, "Semua field profil harus diisi!", android.widget.Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Semua field profil harus diisi!", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
@@ -191,7 +205,7 @@ public class DashboardActivity extends AppCompatActivity {
                     m.setEmail(emailBaru);
 
                     dbHelper.updateMahasiswa(m);
-                    android.widget.Toast.makeText(this, "Profil berhasil diperbarui!", android.widget.Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Profil berhasil diperbarui!", Toast.LENGTH_SHORT).show();
                     loadDashboardData();
                 })
                 .setNegativeButton("Batal", null)
@@ -202,15 +216,31 @@ public class DashboardActivity extends AppCompatActivity {
                     .setTitle("Reset Semua Data")
                     .setMessage("Apakah Anda yakin ingin menghapus semua rencana anggaran, tabungan, dan riwayat transaksi? Tindakan ini tidak bisa dibatalkan.")
                     .setPositiveButton("Ya, Hapus Semua", (dialogInterface, i) -> {
-                        dbHelper.resetDatabase();
+                        dbHelper.resetDatabase(userId);
                         dialog.dismiss();
-                        android.widget.Toast.makeText(this, "Semua data berhasil direset!", android.widget.Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Semua data berhasil direset!", Toast.LENGTH_SHORT).show();
                         loadDashboardData();
                     })
                     .setNegativeButton("Batal", null)
                     .show();
         });
 
+        btnLogout.setOnClickListener(view -> {
+            dialog.dismiss();
+            logout();
+        });
+
         dialog.show();
+    }
+
+    private void logout() {
+        // Hapus session dan kembali ke LoginActivity
+        SharedPreferences prefs = getSharedPreferences("keuangan_prefs", MODE_PRIVATE);
+        prefs.edit().clear().apply();
+
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

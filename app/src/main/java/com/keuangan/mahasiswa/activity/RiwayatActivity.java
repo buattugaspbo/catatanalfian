@@ -1,6 +1,7 @@
 package com.keuangan.mahasiswa.activity;
 
 import android.app.AlertDialog;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -22,17 +23,13 @@ import com.keuangan.mahasiswa.model.Transaksi;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Logika halaman RiwayatActivity.
- * Menampilkan daftar transaksi riwayat.
- * Mendukung opsi hapus transaksi via Long Click dengan me-revert
- * saldo dompet utama dan tabungan secara aman.
- */
+// Activity untuk menampilkan seluruh riwayat transaksi pemasukan dan pengeluaran
 public class RiwayatActivity extends AppCompatActivity implements TransaksiAdapter.OnItemLongClickListener {
 
     private DatabaseHelper dbHelper;
     private List<Transaksi> riwayatList;
     private TransaksiAdapter adapter;
+    private int userId;
 
     private TextView tvEmptyState;
     private RecyclerView rvTransaksi;
@@ -41,6 +38,10 @@ public class RiwayatActivity extends AppCompatActivity implements TransaksiAdapt
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_riwayat);
+
+        // Ambil userId dari SharedPreferences
+        SharedPreferences prefs = getSharedPreferences("keuangan_prefs", MODE_PRIVATE);
+        userId = prefs.getInt("user_id", -1);
 
         dbHelper = new DatabaseHelper(this);
 
@@ -62,7 +63,7 @@ public class RiwayatActivity extends AppCompatActivity implements TransaksiAdapt
 
     private void loadRiwayatData() {
         riwayatList.clear();
-        riwayatList.addAll(dbHelper.getAllTransaksi());
+        riwayatList.addAll(dbHelper.getAllTransaksi(userId));
         adapter.notifyDataSetChanged();
 
         if (riwayatList.isEmpty()) {
@@ -74,7 +75,7 @@ public class RiwayatActivity extends AppCompatActivity implements TransaksiAdapt
         }
     }
 
-    // Callback long click untuk menghapus transaksi
+    // Callback ketika item transaksi ditekan lama untuk dihapus
     @Override
     public void onItemLongClick(Transaksi t) {
         new AlertDialog.Builder(this)
@@ -86,16 +87,19 @@ public class RiwayatActivity extends AppCompatActivity implements TransaksiAdapt
     }
 
     private void revertDanHapusTransaksi(Transaksi t) {
-        Mahasiswa m = dbHelper.getMahasiswa();
-        Tabungan tab = dbHelper.getTabungan();
+        Mahasiswa m = dbHelper.getMahasiswa(userId);
+        Tabungan tab = dbHelper.getTabungan(userId);
 
-        // OOP Revert: Membalikkan efek transaksi pada Saldo dan Tabungan secara dinamis
+        if (m == null || tab == null) {
+            Toast.makeText(this, "Gagal memproses penghapusan!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Mengembalikan saldo utama dan saldo tabungan ke kondisi sebelum transaksi dilakukan
         if (t instanceof Pemasukan) {
             Pemasukan pem = (Pemasukan) t;
-            // Mengurangi kembali saldo berjalan utama
             m.setSaldo(m.getSaldo() - t.getNominal());
             
-            // Revert tabungan jika asalnya menarik tabungan
             if ("Ambil Tabungan".equalsIgnoreCase(pem.getSumberPemasukan())) {
                 tab.setSaldoTabungan(tab.getSaldoTabungan() + t.getNominal());
             } else if ("Uang Bulanan".equalsIgnoreCase(pem.getSumberPemasukan())) {
@@ -103,18 +107,16 @@ public class RiwayatActivity extends AppCompatActivity implements TransaksiAdapt
             }
         } else if (t instanceof Pengeluaran) {
             Pengeluaran peng = (Pengeluaran) t;
-            // Menambahkan kembali saldo berjalan utama
             m.setSaldo(m.getSaldo() + t.getNominal());
             
-            // Revert tabungan jika tujuannya menyetor tabungan
             if ("Tabungan".equalsIgnoreCase(peng.getKategori())) {
                 tab.setSaldoTabungan(Math.max(0, tab.getSaldoTabungan() - t.getNominal()));
             }
         }
 
-        // Update ke database lokal SQLite
+        // Menyimpan perubahan ke database SQLite berdasarkan userId dan menghapus data transaksi
         dbHelper.updateMahasiswa(m);
-        dbHelper.updateTabungan(tab);
+        dbHelper.updateTabungan(tab, userId);
         dbHelper.deleteTransaksi(t.getId());
 
         Toast.makeText(this, "Transaksi dihapus dan saldo disesuaikan!", Toast.LENGTH_SHORT).show();

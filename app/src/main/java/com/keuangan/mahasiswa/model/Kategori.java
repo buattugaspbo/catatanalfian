@@ -1,11 +1,7 @@
 package com.keuangan.mahasiswa.model;
 
-/**
- * Konsep PBO: Encapsulation
- * Kelas Kategori mendefinisikan kategori transaksi beserta batas anggaran maksimum.
- */
+// Kelas Kategori untuk mendefinisikan batas anggaran maksimal per kategori pengeluaran
 public class Kategori {
-    // Konsep PBO: Encapsulation
     private int id;
     private String namaKategori;
     private double batasAnggaran;

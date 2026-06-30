@@ -1,5 +1,6 @@
 package com.keuangan.mahasiswa.activity;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -8,6 +9,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,17 +25,14 @@ import com.keuangan.mahasiswa.utils.ValidasiInput;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Logika halaman RencanaPengeluaranActivity.
- * Memproses pembuatan alokasi budget bulanan per kategori
- * dan menghitung sisa sisa anggaran serta memberikan peringatan jika melebihi uang bulanan.
- */
-public class RencanaPengeluaranActivity extends AppCompatActivity {
+// Activity untuk mengelola rencana pengeluaran bulanan per kategori
+public class RencanaPengeluaranActivity extends AppCompatActivity implements RencanaAdapter.OnItemLongClickListener {
 
     private DatabaseHelper dbHelper;
     private Mahasiswa mahasiswa;
     private List<RencanaPengeluaran> rencanaList;
     private RencanaAdapter adapter;
+    private int userId;
 
     private Spinner spKategori;
     private EditText etNominal;
@@ -49,8 +48,12 @@ public class RencanaPengeluaranActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rencana_pengeluaran);
 
+        // Ambil userId dari SharedPreferences
+        SharedPreferences prefs = getSharedPreferences("keuangan_prefs", MODE_PRIVATE);
+        userId = prefs.getInt("user_id", -1);
+
         dbHelper = new DatabaseHelper(this);
-        mahasiswa = dbHelper.getMahasiswa();
+        mahasiswa = dbHelper.getMahasiswa(userId);
 
         initViews();
         setupSpinner();
@@ -81,27 +84,29 @@ public class RencanaPengeluaranActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         rencanaList = new ArrayList<>();
-        adapter = new RencanaAdapter(rencanaList);
+        adapter = new RencanaAdapter(rencanaList, this);
         rvRencana.setLayoutManager(new LinearLayoutManager(this));
         rvRencana.setAdapter(adapter);
     }
 
     private void loadRencanaData() {
+        if (mahasiswa == null) return;
+        
         rencanaList.clear();
-        rencanaList.addAll(dbHelper.getAllRencana());
+        rencanaList.addAll(dbHelper.getAllRencana(userId));
         adapter.notifyDataSetChanged();
 
-        // Hitung total rencana anggaran
+        // Menghitung total seluruh rencana anggaran
         double totalRencana = 0;
         for (RencanaPengeluaran r : rencanaList) {
             totalRencana += r.getNominalRencana();
         }
 
-        // Tampilkan ringkasan
+        // Memperbarui informasi di UI
         tvUangBulananSummary.setText("Uang Bulanan: " + FormatRupiah.format(mahasiswa.getUangBulanan()));
         tvTotalRencanaSummary.setText("Total Rencana: " + FormatRupiah.format(totalRencana));
 
-        // Tampilkan peringatan jika rencana pengeluaran melebihi uang bulanan
+        // Menampilkan peringatan jika rencana melebihi uang bulanan
         if (totalRencana > mahasiswa.getUangBulanan()) {
             tvBudgetWarning.setText("Peringatan: Total rencana anggaran (" + FormatRupiah.format(totalRencana) + ") melebihi total uang bulanan Anda!");
             tvBudgetWarning.setVisibility(View.VISIBLE);
@@ -114,7 +119,7 @@ public class RencanaPengeluaranActivity extends AppCompatActivity {
         String kategori = spKategori.getSelectedItem().toString();
         String nominalStr = etNominal.getText().toString().trim();
 
-        // Validasi input
+        // Validasi input form
         if (ValidasiInput.isEmpty(nominalStr)) {
             Toast.makeText(this, "Nominal rencana tidak boleh kosong!", Toast.LENGTH_SHORT).show();
             return;
@@ -131,14 +136,35 @@ public class RencanaPengeluaranActivity extends AppCompatActivity {
             return;
         }
 
-        // Instansiasi model RencanaPengeluaran secara OOP
+        // Inisialisasi objek RencanaPengeluaran
         RencanaPengeluaran rencana = new RencanaPengeluaran(kategori, nominal);
 
-        // Simpan ke SQLite
-        dbHelper.addOrUpdateRencana(rencana);
+        // Menyimpan data rencana anggaran ke database SQLite berdasarkan userId
+        dbHelper.addOrUpdateRencana(rencana, userId);
         etNominal.setText("");
 
         Toast.makeText(this, "Rencana anggaran berhasil disimpan", Toast.LENGTH_SHORT).show();
         loadRencanaData();
+    }
+
+    // Callback long click untuk menghapus rencana anggaran
+    @Override
+    public void onItemLongClick(RencanaPengeluaran rp) {
+        new AlertDialog.Builder(this)
+                .setTitle("Hapus Rencana Anggaran")
+                .setMessage("Apakah Anda yakin ingin menghapus rencana anggaran kategori \"" + rp.getKategori() + "\"?")
+                .setPositiveButton("Hapus", (dialog, which) -> deleteRencana(rp))
+                .setNegativeButton("Batal", null)
+                .show();
+    }
+
+    private void deleteRencana(RencanaPengeluaran rp) {
+        boolean success = dbHelper.deleteRencana(rp.getKategori(), userId);
+        if (success) {
+            Toast.makeText(this, "Rencana anggaran berhasil dihapus!", Toast.LENGTH_SHORT).show();
+            loadRencanaData();
+        } else {
+            Toast.makeText(this, "Gagal menghapus rencana anggaran!", Toast.LENGTH_SHORT).show();
+        }
     }
 }

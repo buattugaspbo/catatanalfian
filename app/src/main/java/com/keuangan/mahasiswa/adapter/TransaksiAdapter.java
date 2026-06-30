@@ -19,17 +19,13 @@ import com.keuangan.mahasiswa.utils.FormatRupiah;
 
 import java.util.List;
 
-/**
- * Konsep PBO: Polymorphism
- * TransaksiAdapter menampung list bertipe superclass Transaksi.
- * Saat bind data, JVM secara dinamis memanggil method override t.getDetailInfo()
- * dan memilah visual warna/tanda nominal tergantung subclass riilnya.
- */
+// Adapter RecyclerView untuk menampilkan daftar transaksi (Pemasukan dan Pengeluaran)
 public class TransaksiAdapter extends RecyclerView.Adapter<TransaksiAdapter.ViewHolder> {
 
     private final List<Transaksi> list;
     private final OnItemLongClickListener listener;
 
+    // Interface untuk menangani aksi long click pada item transaksi
     public interface OnItemLongClickListener {
         void onItemLongClick(Transaksi t);
     }
@@ -54,7 +50,7 @@ public class TransaksiAdapter extends RecyclerView.Adapter<TransaksiAdapter.View
         holder.tvDescription.setText(t.getKeterangan());
         holder.tvDate.setText(t.getTanggal());
         
-        // PBO: Polymorphism - Dynamic Method Dispatch
+        // Memanggil metode getDetailInfo yang akan dijalankan secara dinamis sesuai tipe objek
         holder.tvDetailInfo.setText(t.getDetailInfo());
         
         String prefix = "";
@@ -73,7 +69,7 @@ public class TransaksiAdapter extends RecyclerView.Adapter<TransaksiAdapter.View
         holder.tvAmount.setTextColor(color);
         holder.viewIndicator.setBackgroundTintList(ColorStateList.valueOf(color));
 
-        // Click listener tahan lama untuk opsi Hapus
+        // Menambahkan listener untuk mendeteksi aksi long click pada item list
         holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {

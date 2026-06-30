@@ -1,12 +1,7 @@
 package com.keuangan.mahasiswa.model;
 
-/**
- * Konsep PBO: Inheritance & Polymorphism
- * Kelas Pemasukan mewarisi dari Transaksi.
- * Meng-override prosesTransaksi() untuk menambah saldo mahasiswa dan menangani penarikan tabungan.
- */
+// Kelas Pemasukan mewarisi seluruh atribut dan metode dari kelas Transaksi
 public class Pemasukan extends Transaksi {
-    // Konsep PBO: Encapsulation
     private String sumberPemasukan;
 
     public Pemasukan(int id, String tanggal, double nominal, String keterangan, String sumberPemasukan) {
@@ -22,13 +17,13 @@ public class Pemasukan extends Transaksi {
         this.sumberPemasukan = sumberPemasukan;
     }
 
-    // Konsep PBO: Polymorphism - Overriding Method
+    // Implementasi metode prosesTransaksi untuk transaksi pemasukan
     @Override
     public void prosesTransaksi(Mahasiswa m, Tabungan t) {
-        // Logika bisnis: Saldo utama bertambah
+        // Menambah saldo dompet mahasiswa
         m.setSaldo(m.getSaldo() + getNominal());
 
-        // Jika sumber pemasukan berasal dari pengambilan tabungan, kurangi saldo tabungan
+        // Mengurangi saldo tabungan apabila sumber dana ditarik dari tabungan
         if ("Ambil Tabungan".equalsIgnoreCase(sumberPemasukan) && t != null) {
             t.ambilTabungan(getNominal());
         }

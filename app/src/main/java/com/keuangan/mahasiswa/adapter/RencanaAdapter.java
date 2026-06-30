@@ -14,15 +14,20 @@ import com.keuangan.mahasiswa.utils.FormatRupiah;
 
 import java.util.List;
 
-/**
- * Adapter untuk merender daftar rencana anggaran belanja mahasiswa dalam RecyclerView.
- */
+// Adapter untuk menampilkan daftar rencana anggaran dalam RecyclerView
 public class RencanaAdapter extends RecyclerView.Adapter<RencanaAdapter.ViewHolder> {
 
     private final List<RencanaPengeluaran> list;
+    private final OnItemLongClickListener listener;
 
-    public RencanaAdapter(List<RencanaPengeluaran> list) {
+    // Interface untuk menangani aksi long click pada item rencana
+    public interface OnItemLongClickListener {
+        void onItemLongClick(RencanaPengeluaran rp);
+    }
+
+    public RencanaAdapter(List<RencanaPengeluaran> list, OnItemLongClickListener listener) {
         this.list = list;
+        this.listener = listener;
     }
 
     @NonNull
@@ -37,6 +42,18 @@ public class RencanaAdapter extends RecyclerView.Adapter<RencanaAdapter.ViewHold
         RencanaPengeluaran rp = list.get(position);
         holder.tvKategori.setText(rp.getKategori());
         holder.tvNominal.setText(FormatRupiah.format(rp.getNominalRencana()));
+
+        // Listener untuk mendeteksi long click pada item list
+        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                if (listener != null) {
+                    listener.onItemLongClick(rp);
+                    return true;
+                }
+                return false;
+            }
+        });
     }
 
     @Override

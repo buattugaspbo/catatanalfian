@@ -1,21 +1,15 @@
 package com.keuangan.mahasiswa.model;
 
-/**
- * Konsep PBO: Inheritance & Polymorphism
- * Kelas Pengeluaran mewarisi dari Transaksi.
- * Meng-override prosesTransaksi() untuk mengurangi saldo utama dan mendepositkan uang ke tabungan.
- * Menerapkan enkapsulasi untuk validasi bahwa alasan pengeluaran tidak boleh kosong.
- */
+// Kelas Pengeluaran mewarisi seluruh atribut dan metode dari kelas Transaksi
 public class Pengeluaran extends Transaksi {
-    // Konsep PBO: Encapsulation
     private String kategori;
     private String alasan;
-    private String tingkatKebutuhan; // Rendah, Sedang, Penting, Darurat
+    private String tingkatKebutuhan;
 
     public Pengeluaran(int id, String tanggal, double nominal, String keterangan, String kategori, String alasan, String tingkatKebutuhan) {
         super(id, tanggal, nominal, keterangan);
         
-        // Validasi: Alasan pengeluaran tidak boleh kosong
+        // Validasi input parameter alasan agar tidak kosong
         if (alasan == null || alasan.trim().isEmpty()) {
             throw new IllegalArgumentException("Alasan pengeluaran tidak boleh kosong!");
         }
@@ -51,18 +45,18 @@ public class Pengeluaran extends Transaksi {
         this.tingkatKebutuhan = tingkatKebutuhan;
     }
 
-    // Konsep PBO: Polymorphism - Overriding Method
+    // Implementasi metode prosesTransaksi untuk transaksi pengeluaran
     @Override
     public void prosesTransaksi(Mahasiswa m, Tabungan t) {
-        // Validasi bisnis: Pengeluaran tidak boleh melebihi saldo berjalan mahasiswa
+        // Validasi agar pengeluaran tidak melebihi saldo saat ini
         if (getNominal() > m.getSaldo()) {
             throw new IllegalArgumentException("Saldo dompet tidak mencukupi!");
         }
 
-        // Mengurangi saldo dompet
+        // Mengurangi saldo utama mahasiswa
         m.setSaldo(m.getSaldo() - getNominal());
 
-        // Jika pengeluaran bertipe investasi/tabungan, tambahkan ke saldo tabungan
+        // Menambahkan nominal ke saldo tabungan jika kategori pengeluaran adalah Tabungan
         if ("Tabungan".equalsIgnoreCase(kategori) && t != null) {
             t.tambahTabungan(getNominal());
         }

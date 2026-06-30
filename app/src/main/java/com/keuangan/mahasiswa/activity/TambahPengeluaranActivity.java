@@ -1,5 +1,6 @@
 package com.keuangan.mahasiswa.activity;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -21,15 +22,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-/**
- * Logika halaman TambahPengeluaranActivity.
- * Memproses pencatatan pengeluaran harian dan melakukan validasi saldo dompet.
- */
+// Activity untuk menambahkan data pengeluaran baru
 public class TambahPengeluaranActivity extends AppCompatActivity {
 
     private DatabaseHelper dbHelper;
     private Mahasiswa mahasiswa;
     private Tabungan tabungan;
+    private int userId;
 
     private EditText etKeterangan, etNominal, etAlasan;
     private Spinner spKategori, spTingkatKebutuhan;
@@ -48,9 +47,13 @@ public class TambahPengeluaranActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tambah_pengeluaran);
 
+        // Ambil userId dari SharedPreferences
+        SharedPreferences prefs = getSharedPreferences("keuangan_prefs", MODE_PRIVATE);
+        userId = prefs.getInt("user_id", -1);
+
         dbHelper = new DatabaseHelper(this);
-        mahasiswa = dbHelper.getMahasiswa();
-        tabungan = dbHelper.getTabungan();
+        mahasiswa = dbHelper.getMahasiswa(userId);
+        tabungan = dbHelper.getTabungan(userId);
 
         initViews();
         setupSpinners();
@@ -58,7 +61,9 @@ public class TambahPengeluaranActivity extends AppCompatActivity {
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnCatatPengeluaran).setOnClickListener(v -> catatPengeluaran());
 
-        tvSaldoTersedia.setText(FormatRupiah.format(mahasiswa.getSaldo()));
+        if (mahasiswa != null) {
+            tvSaldoTersedia.setText(FormatRupiah.format(mahasiswa.getSaldo()));
+        }
     }
 
     private void initViews() {
@@ -91,7 +96,7 @@ public class TambahPengeluaranActivity extends AppCompatActivity {
         String alasan = etAlasan.getText().toString().trim();
         String tingkatKebutuhan = spTingkatKebutuhan.getSelectedItem().toString();
 
-        // 1. Validasi input menggunakan kelas utilitas pembantu
+        // Validasi input data pengeluaran harian
         if (ValidasiInput.isEmpty(keterangan) || ValidasiInput.isEmpty(nominalStr) || ValidasiInput.isEmpty(alasan)) {
             Toast.makeText(this, "Semua kolom input wajib diisi!", Toast.LENGTH_SHORT).show();
             return;
@@ -108,11 +113,10 @@ public class TambahPengeluaranActivity extends AppCompatActivity {
             return;
         }
 
-        // Tentukan tanggal transaksi saat ini
+        // Menentukan tanggal transaksi hari ini
         String tanggal = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(new Date());
 
-        // 2. Instansiasi model Pengeluaran secara OOP
-        // Constructor otomatis melakukan enkapsulasi validasi alasan kosong
+        // Inisialisasi objek Pengeluaran
         Pengeluaran pengeluaran;
         try {
             pengeluaran = new Pengeluaran(0, tanggal, nominal, keterangan, kategori, alasan, tingkatKebutuhan);
@@ -121,7 +125,7 @@ public class TambahPengeluaranActivity extends AppCompatActivity {
             return;
         }
 
-        // 3. Eksekusi pengolahan saldo berjalan secara polimorfis
+        // Memproses transaksi pengeluaran untuk memperbarui saldo
         try {
             pengeluaran.prosesTransaksi(mahasiswa, tabungan);
         } catch (IllegalArgumentException e) {
@@ -129,12 +133,12 @@ public class TambahPengeluaranActivity extends AppCompatActivity {
             return;
         }
 
-        // 4. Update data ke SQLite lokal
+        // Menyimpan data pengeluaran dan pembaruan saldo ke database SQLite berdasarkan userId
         dbHelper.updateMahasiswa(mahasiswa);
         if ("Tabungan".equalsIgnoreCase(kategori)) {
-            dbHelper.updateTabungan(tabungan);
+            dbHelper.updateTabungan(tabungan, userId);
         }
-        dbHelper.insertTransaksi(pengeluaran);
+        dbHelper.insertTransaksi(pengeluaran, userId);
 
         Toast.makeText(this, "Pengeluaran berhasil dicatat!", Toast.LENGTH_SHORT).show();
         finish();
