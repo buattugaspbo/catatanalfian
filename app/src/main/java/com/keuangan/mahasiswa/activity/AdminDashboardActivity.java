@@ -91,8 +91,7 @@ public class AdminDashboardActivity extends AppCompatActivity implements Mahasis
         };
 
         new AlertDialog.Builder(this)
-                .setTitle(m.getNama())
-                .setMessage("NIM: " + m.getNim() + "\nEmail: " + m.getEmail())
+                .setTitle(m.getNama() + " (" + m.getNim() + ")")
                 .setItems(pilihan, (dialog, which) -> {
                     switch (which) {
                         case 0:
@@ -110,7 +109,6 @@ public class AdminDashboardActivity extends AppCompatActivity implements Mahasis
     }
 
     private void showResetPasswordDialog(Mahasiswa m) {
-        View dialogView = getLayoutInflater().inflate(android.R.layout.simple_list_item_1, null);
         EditText etPasswordBaru = new EditText(this);
         etPasswordBaru.setHint("Password baru (min. 6 karakter)");
         etPasswordBaru.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
