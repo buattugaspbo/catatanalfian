@@ -13,10 +13,14 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -56,11 +60,12 @@ public class LaporanActivity extends AppCompatActivity {
     private int userId;
 
     private TextView tvUangBulanan, tvTotalPengeluaran, tvTotalTabungan, tvSaldoAkhir;
-    private TextView tvTingkatKebutuhanDominan, tvKesimpulan, tvLineChartPeriode;
+    private TextView tvTingkatKebutuhanDominan, tvKesimpulan, tvLineChartPeriode, tvBarChartPeriode;
     private LinearLayout llKategoriLaporan;
 
     private Spinner spTipe, spBulan, spTahun;
     private LineChart lineChart;
+    private BarChart barChart;
     private PieChart pieChart;
 
     private final String[] listTipeFilter = {"Semua", "Per Bulan"};
@@ -104,11 +109,13 @@ public class LaporanActivity extends AppCompatActivity {
         tvKesimpulan = findViewById(R.id.tvLaporanKesimpulan);
         llKategoriLaporan = findViewById(R.id.llKategoriLaporan);
         tvLineChartPeriode = findViewById(R.id.tvLineChartPeriode);
+        tvBarChartPeriode = findViewById(R.id.tvBarChartPeriode);
 
         spTipe = findViewById(R.id.spFilterTipe);
         spBulan = findViewById(R.id.spFilterBulan);
         spTahun = findViewById(R.id.spFilterTahun);
         lineChart = findViewById(R.id.lineChart);
+        barChart = findViewById(R.id.barChart);
         pieChart = findViewById(R.id.pieChart);
     }
 
@@ -177,6 +184,7 @@ public class LaporanActivity extends AppCompatActivity {
                 }
             }
             tvLineChartPeriode.setText("Tren Keuangan Tahun " + tahunStr);
+            tvBarChartPeriode.setText("Perbandingan Keuangan Tahun " + tahunStr);
         } else {
             int targetBulan = spBulan.getSelectedItemPosition() + 1; // 1-indexed
             for (Transaksi t : semuaTransaksiList) {
@@ -187,6 +195,7 @@ public class LaporanActivity extends AppCompatActivity {
                 }
             }
             tvLineChartPeriode.setText("Tren Keuangan Bulan " + listBulan[targetBulan - 1] + " " + tahunStr);
+            tvBarChartPeriode.setText("Perbandingan Keuangan Bulan " + listBulan[targetBulan - 1] + " " + tahunStr);
         }
 
         updateTampilan();
@@ -199,6 +208,7 @@ public class LaporanActivity extends AppCompatActivity {
         hitungTingkatKebutuhanDominan();
         tampilkanKesimpulanFinansial();
         buatLineChart();
+        buatBarChart();
         buatPieChart();
     }
 
@@ -386,6 +396,104 @@ public class LaporanActivity extends AppCompatActivity {
 
         lineChart.animateX(800);
         lineChart.invalidate();
+    }
+
+    private void buatBarChart() {
+        List<BarEntry> entriesPemasukan = new ArrayList<>();
+        List<BarEntry> entriesPengeluaran = new ArrayList<>();
+        final List<String> labels = new ArrayList<>();
+
+        String tipe = spTipe.getSelectedItem().toString();
+
+        if ("Per Bulan".equals(tipe)) {
+            // X-axis: Hari dalam sebulan (1 s/d 31)
+            double[] harianPemasukan = new double[32];
+            double[] harianPengeluaran = new double[32];
+
+            for (Transaksi t : filteredTransaksiList) {
+                int day = getDayFromDateString(t.getTanggal());
+                if (day >= 1 && day <= 31) {
+                    if (t instanceof Pemasukan) {
+                        harianPemasukan[day] += t.getNominal();
+                    } else {
+                        harianPengeluaran[day] += t.getNominal();
+                    }
+                }
+            }
+
+            for (int i = 1; i <= 31; i++) {
+                entriesPemasukan.add(new BarEntry(i - 1, (float) harianPemasukan[i]));
+                entriesPengeluaran.add(new BarEntry(i - 1, (float) harianPengeluaran[i]));
+                labels.add(String.valueOf(i));
+            }
+        } else {
+            // X-axis: 12 Bulan (Jan s/d Des)
+            double[] bulananPemasukan = new double[13];
+            double[] bulananPengeluaran = new double[13];
+
+            for (Transaksi t : filteredTransaksiList) {
+                int month = getMonthFromDateString(t.getTanggal());
+                if (month >= 1 && month <= 12) {
+                    if (t instanceof Pemasukan) {
+                        bulananPemasukan[month] += t.getNominal();
+                    } else {
+                        bulananPengeluaran[month] += t.getNominal();
+                    }
+                }
+            }
+
+            String[] namaBulanSingkat = {"Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"};
+            for (int i = 1; i <= 12; i++) {
+                entriesPemasukan.add(new BarEntry(i - 1, (float) bulananPemasukan[i]));
+                entriesPengeluaran.add(new BarEntry(i - 1, (float) bulananPengeluaran[i]));
+                labels.add(namaBulanSingkat[i - 1]);
+            }
+        }
+
+        // Setup Data Set Bar Pemasukan (Hijau)
+        BarDataSet setPem = new BarDataSet(entriesPemasukan, "Pemasukan");
+        setPem.setColor(Color.rgb(76, 175, 80));
+        setPem.setDrawValues(false);
+
+        // Setup Data Set Bar Pengeluaran (Merah)
+        BarDataSet setPeng = new BarDataSet(entriesPengeluaran, "Pengeluaran");
+        setPeng.setColor(Color.rgb(244, 67, 54));
+        setPeng.setDrawValues(false);
+
+        BarData barData = new BarData(setPem, setPeng);
+
+        float groupSpace = 0.3f;
+        float barSpace = 0.05f;
+        float barWidth = 0.3f;
+        // (barWidth + barSpace) * 2 + groupSpace = (0.3 + 0.05)*2 + 0.3 = 1.0 (interval length)
+        barData.setBarWidth(barWidth);
+        barChart.setData(barData);
+        barChart.groupBars(0f, groupSpace, barSpace);
+
+        // Styling BarChart
+        barChart.getDescription().setEnabled(false);
+        barChart.getLegend().setTextColor(Color.DKGRAY);
+        barChart.setTouchEnabled(true);
+        barChart.setDragEnabled(true);
+        barChart.setScaleEnabled(true);
+        barChart.setPinchZoom(true);
+
+        XAxis xAxis = barChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setGranularity(1f);
+        xAxis.setTextColor(Color.DKGRAY);
+        xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
+        xAxis.setCenterAxisLabels(true);
+        xAxis.setAxisMinimum(0f);
+        xAxis.setAxisMaximum(labels.size());
+        xAxis.setLabelCount(Math.min(labels.size(), 10));
+
+        YAxis leftAxis = barChart.getAxisLeft();
+        leftAxis.setTextColor(Color.DKGRAY);
+        barChart.getAxisRight().setEnabled(false);
+
+        barChart.animateY(800);
+        barChart.invalidate();
     }
 
     private void buatPieChart() {
